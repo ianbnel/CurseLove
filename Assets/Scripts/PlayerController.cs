@@ -8,6 +8,12 @@ public class PlayerController : MonoBehaviour
 
     [Header("Jumping")]
     public float jumpForce = 12f;
+    public float fallGravityMultiplier = 2.5f;
+    public float lowJumpGravityMultiplier = 2f;
+
+    [Header("Coyote Time")]
+    public float coyoteTime = 0.15f;
+    private float coyoteTimeCounter;
 
     [Header("Ground Detection")]
     public Transform groundCheck;
@@ -27,12 +33,26 @@ public class PlayerController : MonoBehaviour
     {
         ReadMovementInput();
         CheckGrounded();
+        UpdateCoyoteTime();
         ReadJumpInput();
     }
 
     void FixedUpdate()
     {
         MovePlayer();
+        ApplyBetterJumpFeel();
+    }
+
+    void ApplyBetterJumpFeel()
+    {
+        if (rb.linearVelocity.y < 0)
+        {
+            rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (fallGravityMultiplier - 1) * Time.fixedDeltaTime;
+        }
+        else if (rb.linearVelocity.y > 0 && !Keyboard.current.spaceKey.isPressed)
+        {
+            rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (lowJumpGravityMultiplier - 1) * Time.fixedDeltaTime;
+        }
     }
 
     void ReadMovementInput()
@@ -52,9 +72,13 @@ public class PlayerController : MonoBehaviour
 
     void ReadJumpInput()
     {
-        if (Keyboard.current.spaceKey.wasPressedThisFrame && isGrounded)
+        if (Keyboard.current.spaceKey.wasPressedThisFrame)
         {
-            Jump();
+            if (coyoteTimeCounter > 0f)
+            {
+                Jump();
+                coyoteTimeCounter = 0f;
+            }
         }
     }
 
@@ -82,6 +106,18 @@ public class PlayerController : MonoBehaviour
         if (groundCheck != null)
         {
             Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        }
+    }
+
+    void UpdateCoyoteTime()
+    {
+        if (isGrounded)
+        {
+            coyoteTimeCounter = coyoteTime;
+        }
+        else
+        {
+            coyoteTimeCounter -= Time.deltaTime;
         }
     }
 
