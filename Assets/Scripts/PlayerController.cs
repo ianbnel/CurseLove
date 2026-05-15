@@ -3,10 +3,20 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
-    public float moveSpeed = 5f;
+    [Header("Movement")]
+    public float moveSpeed = 6f;
+
+    [Header("Jumping")]
+    public float jumpForce = 12f;
+
+    [Header("Ground Detection")]
+    public Transform groundCheck;
+    public float groundCheckRadius = 0.3f;
+    public LayerMask groundLayer;
 
     private Rigidbody2D rb;
     private float moveInput;
+    private bool isGrounded;
 
     void Start()
     {
@@ -14,6 +24,18 @@ public class PlayerController : MonoBehaviour
     }
 
     void Update()
+    {
+        ReadMovementInput();
+        CheckGrounded();
+        ReadJumpInput();
+    }
+
+    void FixedUpdate()
+    {
+        MovePlayer();
+    }
+
+    void ReadMovementInput()
     {
         moveInput = 0f;
 
@@ -28,8 +50,39 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    void FixedUpdate()
+    void ReadJumpInput()
+    {
+        if (Keyboard.current.spaceKey.wasPressedThisFrame && isGrounded)
+        {
+            Jump();
+        }
+    }
+
+    void MovePlayer()
     {
         rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
     }
+
+    void Jump()
+    {
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+    }
+
+    void CheckGrounded()
+    {
+        isGrounded = Physics2D.OverlapCircle(
+            groundCheck.position,
+            groundCheckRadius,
+            groundLayer
+        );
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        if (groundCheck != null)
+        {
+            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        }
+    }
+
 }
